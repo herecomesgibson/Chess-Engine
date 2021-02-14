@@ -1,5 +1,6 @@
 ﻿  Source.cpp
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(286): warning C4715: 'Lshift': not all control paths return a value
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(309): warning C4715: 'pawn_clean': not all control paths return a value
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(267): warning C4715: 'shift<8>': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(352,51): warning C4805: '&': unsafe mix of type 'bool' and type 'U64' in operation
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(281): warning C4715: 'shift<8>': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(300): warning C4715: 'Lshift': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(323): warning C4715: 'pawn_clean': not all control paths return a value
   Chess Engine.vcxproj -> C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Debug\Chess Engine.exe

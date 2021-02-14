@@ -9,6 +9,7 @@ typedef std::uint64_t U64;
 #define _U64
 #endif  _U64
 
+constexpr U64 one = 1;
 
 constexpr U64 FileA = 0x0101010101010101ULL;
 constexpr U64 FileB = FileA << 1;
@@ -28,6 +29,8 @@ constexpr U64 Rank6 = Rank1 << (8 * 5);
 constexpr U64 Rank7 = Rank1 << (8 * 6);
 constexpr U64 Rank8 = Rank1 << (8 * 7);
 
+constexpr U64 edges = Rank1 | Rank8 | FileA | FileH;
+
 U64 knight_moves[64] = {};
 
 const U64 Ranks[8] = {
@@ -39,7 +42,7 @@ const U64 Files[8] = {
 };
 
 
-const U64 NE_SW_BLACKdiagnal[7] = {
+const U64 NE_SW_BLACKdiagonal[7] = {
 	0x8040,
 	0x80402010,
 	0x804020100804,
@@ -48,6 +51,36 @@ const U64 NE_SW_BLACKdiagnal[7] = {
 	0x804020100000000,
 	0x201000000000000,
 };
+const U64 NW_SE_BLACKdiagonal[8] = {
+	0x1,
+	0x10204,
+	0x102040810,
+	0x1020408102040,
+	0x204081020408000,
+	0x810204080000000,
+	0x2040800000000000,
+	0x8000000000000000,
+};
+const U64 NE_SW_WHITEdiagonal[8] = {
+	0x80,
+	0x804020,
+	0x8040201008,
+	0x80402010080402,
+	0x4020100804020100,
+	0x1008040201000000,
+	0x402010000000000,
+	0x100000000000000,
+};
+const NW_SE_WHITEdiagonal[7] = {
+	0x102,
+	0x1020408,
+	0x10204081020,
+	0x102040810204080,
+	0x408102040800000,
+	0x1020408000000000,
+	0x4080000000000000,
+};
+
 
 const U64 single_bitboards[64] = {
 	0x1, 0x2, 0x4, 0x8,
@@ -224,8 +257,11 @@ inline int rankof(Square s) {
 constexpr int fileof(Square s) { 
 	return (s & 0b111); 
 }
-inline int rankofint(int s) {
-	return (s >> 3);
+inline U64 rankofbb(Square s) {
+	return Ranks[(s >> 3)];
+}
+inline U64 fileofbb(Square s) {
+	return Files[(s & 0b111)];
 }
 
 inline void show_bitboard(U64 bitboard) {
@@ -330,38 +366,136 @@ void engine_init() {
 
 		}
 	}
+	
 }
 //     0b111
 //magic bitboards items
 
 U64 Rook_blockers[64][1024];
-
 U64 Rook_moves[64][1024];
 
-U64 Rook_all(Square sq) {
-	
-	U64 retboard = 0;
-	U64 loc = single_bitboards[sq];
-	U64 bit = loc;
+U64 Bish_blockers[64][1024];
+U64 Bish_moves[64][1024];
 
-	while (bit <<= 8) {
-		retboard |= bit;
+//blocker mask of all potential rook moves - edge moves. If edges is set to false, the edge bits will be included in the output
+U64 Rook_all(Square sq, bool edges = true ) {
+	U64 moves = rankofbb(sq) | fileofbb(sq);
+	if (edges == true) {
+		return moves ^ (single_bitboards[sq] | (edges & moves));
 	}
-	bit = loc;
-	while (loc >>= 8) {
-		retboard |= bit;
+	else {
+		return moves ^ single_bitboards[sq];
 	}
-	bit = loc << 1;
-	return 0;
-	
 }
+
+U64 Bish_all(Square sq, bool edges = true) {
+
+	U64 retboard = 0;
+
+	bool foundone = false;
+	bool foundtwo = false;
+	U64 bit = single_bitboards[sq];
+
+	for (int i = 0; i < 7; i++) {
+		if (NE_SW_BLACKdiagonal[i] & bit) { retboard |= NE_SW_BLACKdiagonal[i]; }
+		if (NW_SE_WHITEdiagonal[i] & bit) { retboard |= NW_SE_WHITEdiagonal[i]; }
+	}
+	for (int i = 0; i < 6; i++) {
+		if (NW_SE_BLACKdiagonal[i] & bit) { retboard |= NW_SE_BLACKdiagonal[i]; }
+		if (NE_SW_WHITEdiagonal[i] & bit) { retboard |= NE_SW_WHITEdiagonal[i]; }
+	}
+	
+
+
+}
+
+//this function takes as input a swuare and a blockerboard and gives as output all possible moves for a rook on the given square. NOTE the return moveboard here includes self captures
+U64 Rook_movebb(Square sq, U64 blockerboard) {
+
+	U64 retboard = 0;
+	U64 possible_moves = Rook_all(sq, false);
+
+	bool north = true;
+	if (sq > 55) { north = false; }
+	
+	bool south = true;
+	if (sq < 8) { south = false; }
+	
+	bool east = true;
+	if (fileof(sq) == 7) { east = false; }
+
+	bool west = true;
+	if (fileof(sq) == 0) { west = false; }
+
+
+	U64 bit = single_bitboards[sq];
+	int square = sq;
+
+	while (north) {
+		square += 8;
+		bit <<= 8;
+		retboard |= bit;
+		if ( (bit & blockerboard) || (square > 55)) { north = false; }
+		
+	}
+
+	bit = single_bitboards[sq];
+	square = sq;
+
+	while (south) {
+		square -= 8;
+		bit >>= 8;
+		retboard |= bit;
+		if ( (bit & blockerboard) || (square < 8) ) { south = false; }
+	}
+	
+	bit = single_bitboards[sq];
+	square = sq;
+
+	while (east) {
+		bit <<= 1;
+		square += 1;
+		retboard |= bit;
+		if ((bit & blockerboard) || (fileof(Square(square)) == 7)) { east = false; }
+	}
+	
+	bit = single_bitboards[sq];
+	square = sq;
+
+	while (west) {
+		square -= 1;
+		bit >>= 1;
+		retboard |= bit;
+		if ((bit & blockerboard) || (fileof(Square(square)) == 0)) { west = false; }
+	}
+
+	return retboard;
+}
+
+//given a blocker mask and an index (a number between 0 and 2^bits) return a unique blockerboard for the square
+U64 generate_blocker(int index, U64 blockermask) {
+	U64 blockerb = blockermask;
+	int bitloc = 0;
+	for (int i = 0; i < 64; i++) {
+		if (blockermask & (one << i)) {//check each square in the blockermask for a piece
+			if (!(index & (one << bitloc))) {// if the bit is unset in the index
+				blockerb &= ~(one << i);
+			}
+			bitloc++;
+		}
+	}
+	return blockerb;
+}
+
 
 void magic_rook_init() {
 	for (int sq = 0; sq < 64; sq++) {
-
-		//rank possiblilties
-		for (int i = 0; i < 6; i++) {
-
+		U64 blocker_mask = Rook_all(Square(sq));
+		int numbits = 10;
+		for (int i = 0; i < (1 << numbits); i++) {
+			U64 uniq_blockb = generate_blocker(i, blocker_mask);
+			Rook_blockers[sq][i] = uniq_blockb;
+			Rook_moves[sq][i] = Rook_movebb(Square(sq), uniq_blockb);
 		}
 
 	}

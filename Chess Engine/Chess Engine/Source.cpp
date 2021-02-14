@@ -54,10 +54,14 @@ int main()
 		}
 
 	}
-	U64 test = single_bitboards[27];
-	Square ranktest = Square(33);
-	U64 testprnt = test << 1;
-	std::cout << fileof(ranktest);
+	U64 test = 0;
+	U64  moveb = Rook_movebb(Square(20), test);
+	std::cout << "!!!!!!!!!!!";
+
+	int indexx = 89;
+
+	show_bitboard(Rook_blockers[20][indexx]);
+	show_bitboard(Rook_moves[20][indexx]);
 
 
 	/*

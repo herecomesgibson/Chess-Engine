@@ -216,6 +216,7 @@ namespace Chess {
 
 
 	Board Board::Board_init(void) {
+		magic_rook_init();
 		engine_init();
 		Board new_board;
 		
