@@ -1,9 +1,10 @@
 
 
 #include <iostream>
+#include <bitset>
 #include "Board.h"
 #include "Types.h"
-#include <bitset>
+
 
 
 
@@ -54,14 +55,26 @@ int main()
 		}
 
 	}
-	U64 test = 0;
-	U64  moveb = Rook_movebb(Square(20), test);
-	std::cout << "!!!!!!!!!!!";
 
-	int indexx = 89;
 
-	show_bitboard(Rook_blockers[20][indexx]);
-	show_bitboard(Rook_moves[20][indexx]);
+	int indexx = 1000;
+
+	
+	//show_bitboard(Bish_moves[27][indexx]);
+	//show_bitboard(Bish_blockers[27][indexx]);
+
+
+	U64 temp = 38504237064;
+	U64 temp2 = 578721386714368008;
+
+
+	//int testt = find_magic_Rook(Square(48));
+
+
+	std::cout << "==\n";
+	//std::cout << testt << "\n";
+	std::cout << "==\n";
+
 
 
 	/*

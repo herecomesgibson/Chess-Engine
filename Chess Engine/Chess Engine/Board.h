@@ -28,14 +28,8 @@ Bitboard array index table of contents
 #include <vector>
 #include <intrin.h>
 #include "Types.h"
+#include "magic.h"
 
-
-
-//define U64 to be a 64 bit unsigned int for use as bitboards
-#ifndef _U64
-typedef std::uint64_t U64;
-#define _U64
-#endif // _U64
 
 
 const size_t NSQUARES = 64;
@@ -217,6 +211,7 @@ namespace Chess {
 
 	Board Board::Board_init(void) {
 		magic_rook_init();
+		magic_bish_init();
 		engine_init();
 		Board new_board;
 		
