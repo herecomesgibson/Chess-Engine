@@ -1,7 +1,7 @@
 This Document functions as a warehouse for old functions so that they may be recycled if need be
 
 
-//this function was for finding magic numbers for rooks, pretty inefficient but once I had the magics I hard coded them so it doesn't really matter
+//this function was for finding magic numbers for rooks, pretty inefficient but once I had the magics I hard coded them so it doesn't really matter. There was also a bishop version of this function but it was really just the same thing.
 U64 find_magic_Rook(Square sq) {
 	
 	U64 used[4096] = { 0 };
@@ -53,3 +53,5 @@ void print_magics_rook() {
 		std::cout << "0x" << std::hex << magic << "," << "\n";
 	}
 }
+
+
