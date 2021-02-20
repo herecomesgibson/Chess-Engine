@@ -1,0 +1,55 @@
+This Document functions as a warehouse for old functions so that they may be recycled if need be
+
+
+//this function was for finding magic numbers for rooks, pretty inefficient but once I had the magics I hard coded them so it doesn't really matter
+U64 find_magic_Rook(Square sq) {
+	
+	U64 used[4096] = { 0 };
+
+	int index;
+
+	U64 mask = Rook_all(sq);
+	int numbits = popcount(mask);
+	bool badmagic = false;
+	
+	for (int g = 0; g < 1000000; g++) {
+		
+		badmagic = false;
+		U64 magic = sparse_random();
+
+		for (int k = 0; k < 4096; k++) {
+			used[k] = 0;
+		}
+		
+		for (int i = 0, fail = 0; !fail && i < (1 << numbits); i++) {
+			index = ((Rook_blockers[sq][i] * magic) >> (64 - numbits));
+			if (used[index] == 0) {
+
+				used[index] = Rook_moves[sq][i];
+				
+			}
+			else if (used[index] != Rook_moves[sq][i]) {
+				badmagic = true;
+				//if (i > 1000) {
+					//std::cout << "i: " << i << "   |   magic: " << magic << "\n";
+				//}
+				fail = 1;
+			}
+		}
+		if (!badmagic) {
+			
+			return magic;
+		}
+	}
+	return 0;
+}
+
+//function for printing magics such that I could copy paste them into a const array
+
+void print_magics_rook() {
+	U64 magic;
+	for (int i = 0; i < 64; i++) {
+		magic = find_magic_Rook(Square(i));
+		std::cout << "0x" << std::hex << magic << "," << "\n";
+	}
+}
