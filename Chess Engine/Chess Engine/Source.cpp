@@ -38,7 +38,8 @@ int main()
 	board.enact(testpls2);
 	board.generate_legal_moves(movelst);
 	board.show();
-	board.enact(movelst[20]);
+	std::cout << movelst[0].get_move_int() << "\n";
+	board.enact(movelst[0]);
 	board.show();
 
 	std::cout << "color turn:" << board.get_turn() << "\n";
@@ -57,30 +58,7 @@ int main()
 	}
 
 
-	int indexx = 1000;
-
-	
-	//show_bitboard(Bish_moves[27][indexx]);
-	//show_bitboard(Bish_blockers[27][indexx]);
-
-
-	U64 temp = 38504237064;
-	U64 temp2 = 578721386714368008;
-
-
-	//int testt = find_magic_Rook(Square(48));
-
 
 	std::cout << "==\n";
-	//std::cout << testt << "\n";
-	std::cout << "==\n";
 
-
-
-	/*
-	U64 test = 8;
-	show_bitboard(test);
-	U64 test2 = Lshift(8, test, WHITE);
-	show_bitboard(test2);
-	*/
 }

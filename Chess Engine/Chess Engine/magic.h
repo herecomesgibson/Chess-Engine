@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <iomanip>
 #include"Types.h"
 
 
@@ -61,19 +62,167 @@ const U64 NW_SE_WHITEdiagonal[7] = {
 
 U64 Rook_blockers[64][4096];
 U64 Rook_moves[64][4096];
-U64 Rook_magics[64];
 
 U64 Bish_blockers[64][1024];
 U64 Bish_moves[64][1024];
-U64 Bish_magics[64];
+
+const U64 Rook_magics[64] = {
+	0x2480002040001688,
+	0x400040200b1004,
+	0x80088610002000,
+	0x800c8008011000,
+	0x2200100420020018,
+	0x500130004000218,
+	0x100008900040200,
+	0x4900002042008100,
+
+	0x2400800080400821,
+	0x200401000402008,
+	0x80805000842000,
+	0x802000920160040,
+	0xe001004200a00,
+	0x810a0010080e0004,
+	0x8002001200280401,
+	0x24800100004180,
+
+	0x20208000804008,
+	0x4044210040038102,
+	0x2001010040102001,
+	0x280420020901a00,
+	0x4001010004100800,
+	0x1808024000200,
+	0x40005023008,
+	0x41802a000040a401,
+
+	0xc0688080004000,
+	0x50004c40002008,
+	0x48200500401100,
+	0x8000300180280280,
+	0x210c880080800400,
+	0x3040080800200,
+	0xc010021400483001,
+	0x140244020000a041,
+
+	0x2224000800882,
+	0x946050082002440,
+	0x839004802001,
+	0x242200400a001024,
+	0x480800800804400,
+	0x402000846000411,
+	0x10224001008,
+	0x41010066000084,
+
+	0x3040006080448000,
+	0x10002010484004,
+	0x10208292020040,
+	0x102005040220008,
+	0x112005004620008,
+	0x2442040480110,
+	0x4120088110040006,
+	0x208114184020021,
+
+	0x210800100403100,
+	0x1000420420810200,
+	0x41809000600080,
+	0x10420069a200,
+	0x140c040280280080,
+	0x8a001450484200,
+	0x48810810020400,
+	0x40010880441600,
+
+	0x40008004d0c02901,
+	0x80c5044210a48202,
+	0x5c8c220015101,
+	0x8810010038042031,
+	0x10004100a0801,
+	0x1005008400080229,
+	0x8108510081204,
+	0x3040024010a4182,
+};
+
+
+U64 Bish_magics[64] = {
+	0x40580905082102,
+	0x1008010820850000,
+	0x4290401000001,
+	0x308248502008820,
+	0x882a061001202081,
+	0x80a0804041010a8,
+	0x4010450242004,
+	0x6202108184040,
+
+	0x92004210040108c0,
+	0x800040404140020,
+	0x8020080200421040,
+	0x20100a2082048041,
+	0x24051040000000,
+	0x8040020804050000,
+	0x1008811098244021,
+	0x480488404028202,
+
+	0x2008221090,
+	0x4010042802018400,
+	0x1001c204144278,
+	0x4058000082024080,
+	0x92008c010c1000,
+	0x1141004090080120,
+	0x140502402021050,
+	0x4000811644480802,
+
+	0x200082e010905044,
+	0x20b010420200,
+	0x8040018005010,
+	0x1203040008020820,
+	0x111010040104002,
+	0x109001202411d,
+	0xd002020901480254,
+	0x4029021004120,
+
+	0x9a00009801d0208,
+	0x2080004808100281,
+	0x200020200010800,
+	0x11180a0084080080,
+	0x80c0004010010101,
+	0x8411004100020101,
+	0x2002060050440410,
+	0x32c02418020440c,
+
+	0x2020110008000114,
+	0x1000101100c2142,
+	0x8020000132040808,
+	0x8286002234004800,
+	0x2201021040442400,
+	0x201020ca1000200,
+	0x20022602022046,
+	0x401020200000a,
+
+	0x8001404000,
+	0x80000000031d2000,
+	0x80110080206108a,
+	0xa0a020848,
+	0x800004011410200,
+	0x181010188000,
+	0x4020021001010000,
+	0x1020082a34444218,
+
+	0x9128084011004,
+	0x1340020241,
+	0x201040000024200,
+	0x4002080000a08848,
+	0x10b0406404050408,
+	0x404a44204888202,
+	0x4000041808880880,
+	0x8002201204010021,
+};
 
 
 
-//blocker mask of all potential rook moves - edge moves. If edges is set to false, the edge bits will be included in the output
-U64 Rook_all(Square sq, bool edges = true) {
+//blocker mask of all potential rook moves - edge moves. If exclude_edges is set to false, the edge bits will be included in the output
+//NOTE: these two functions could be replaced by lookup tables at some point to improve efficiency
+U64 Rook_all(Square sq, bool exclude_edges = true) {
 	U64 bedges = board_edges;
 	U64 moves = rankofbb(sq) | fileofbb(sq);
-	if (edges == true) {
+	if (exclude_edges == true) {
 		if (rankof(sq) == 0) { bedges ^= Rank1_inside; }
 		if (rankof(sq) == 7) { bedges ^= Rank8_inside; }
 		if (fileof(sq) == 0) { bedges ^= AFile_inside; }
@@ -85,6 +234,7 @@ U64 Rook_all(Square sq, bool edges = true) {
 		return moves ^ single_bitboards[sq];
 	}
 }
+//returns a blocker mask for a bishop on any given square
 
 U64 Bish_all(Square sq, bool edges = true) {
 
@@ -233,6 +383,7 @@ U64 Bish_movebb(Square sq, U64 blockerboard) {
 
 //given a blocker mask and an index (a number between 0 and 2^bits) return a unique blockerboard for the square
 U64 generate_blocker(int index, U64 blockermask) {
+	
 	U64 blockerb = blockermask;
 	int bitloc = 0;
 	for (int i = 0; i < 64; i++) {
@@ -259,44 +410,42 @@ inline U64 sparse_random() {
 	return random_64int() & random_64int() & random_64int();
 }
 
-U64 find_magic_Rook(Square sq) {
+U64 find_magic_Bish(Square sq) {
 	
-	U64 used[1024] = {0};
+	U64 used[4096] = { 0 };
 
 	int index;
 
-	U64 mask = Rook_all(sq);
+	U64 mask = Bish_all(sq);
 	int numbits = popcount(mask);
 	bool badmagic = false;
 	
-	for (int g = 0; g < 100000; g++) {
+	for (int g = 0; g < 1000000; g++) {
 		
-		badmagic = true;
+		badmagic = false;
 		U64 magic = sparse_random();
-		//U64 magic = 0x48FFFE99FECFAA00;
 
-		for (int k = 0; k < 1024; k++) {
+		for (int k = 0; k < 4096; k++) {
 			used[k] = 0;
 		}
 		
-		
-
 		for (int i = 0, fail = 0; !fail && i < (1 << numbits); i++) {
-			index = ((Rook_blockers[sq][i] * magic) >> (64 - numbits));
-			if (used[index] == 0) { 
-				used[index] = Rook_moves[sq][i];
+			index = ((Bish_blockers[sq][i] * magic) >> (64 - numbits));
+			if (used[index] == 0) {
+
+				used[index] = Bish_moves[sq][i];
 				
 			}
-			else if (used[index] != Rook_moves[sq][i]) {
+			else if (used[index] != Bish_moves[sq][i]) {
 				badmagic = true;
-				if (i > 900) {
-					std::cout << "i: " << i << "   |   magic: " << magic <<"\n";
-				}
+				//if (i > 1000) {
+					//std::cout << "i: " << i << "   |   magic: " << magic << "\n";
+				//}
 				fail = 1;
 			}
-			
 		}
 		if (!badmagic) {
+			
 			return magic;
 		}
 	}
@@ -318,9 +467,6 @@ void magic_rook_init() {
 			Rook_blockers[sq][i] = uniq_blockb;
 			Rook_moves[sq][i] = Rook_movebb(Square(sq), uniq_blockb);
 		}
-		show_bitboard(blocker_mask);
-		std::cout << "square: " << sq << "    numbits: " << num_bits_rook_mask << "    2^bits: " << (1 << num_bits_rook_mask) << "\n";
-
 	}
 
 }
@@ -336,5 +482,12 @@ void magic_bish_init() {
 			Bish_blockers[sq][i] = blockerboard;
 			Bish_moves[sq][i] = Bish_movebb(Square(sq), blockerboard);
 		}
+	}
+}
+void print_magics_Bish() {
+	U64 magic;
+	for (int i = 0; i < 64; i++) {
+		magic = find_magic_Bish(Square(i));
+		std::cout << "0x" << std::hex << magic << "," << "\n";
 	}
 }

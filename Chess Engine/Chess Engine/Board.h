@@ -151,7 +151,24 @@ namespace Chess {
 				
 				std::cout << "id" << idxadj << "\n";
 				
-
+				//sliding piece moves
+				//bishops
+				U64 us_bishops = bitboards[idxadj + 2];
+				while (us_bishops) {
+					Square s = pop_lsb(&us_bishops);
+					U64 bmask = Bish_all(s);
+					int numbits = popcount(bmask);
+					U64 movebb = Bish_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] ^ usall;
+					while (movebb) {
+						Square to = pop_lsb(&movebb);
+						if (single_bitboards[to] & themall) {
+							*movelst++ = Move(s, to, Move_type(1));
+						}
+						else {
+							*movelst++ = Move(s, to);
+						}
+					}
+				}
 
 
 				//knight moves (lol)
