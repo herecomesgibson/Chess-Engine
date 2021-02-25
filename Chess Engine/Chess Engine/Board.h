@@ -158,8 +158,10 @@ namespace Chess {
 					Square s = pop_lsb(&us_bishops);
 					U64 bmask = Bish_all(s);
 					int numbits = popcount(bmask);
-					U64 movebb = Bish_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] ^ usall;
+					U64 movebb = Bish_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] & (~usall);
 					while (movebb) {
+						std::cout << "movebb" << "\n";
+						show_bitboard(movebb);
 						Square to = pop_lsb(&movebb);
 						if (single_bitboards[to] & themall) {
 							*movelst++ = Move(s, to, Move_type(1));

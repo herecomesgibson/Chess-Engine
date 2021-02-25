@@ -45,9 +45,10 @@ int main()
 	std::cout << "color turn:" << board.get_turn() << "\n";
 
 
-
+	int indexx = 3;
 	
-
+	show_bitboard(Bish_blockers[2][indexx]);
+	show_bitboard(Bish_moves[2][indexx]);
 
 	for (int i = 0; i < 218; i++) {
 		uint16_t temp = movelst[i].get_move_int();
@@ -57,6 +58,11 @@ int main()
 
 	}
 
+	U64 test_blocker = 2560;
+	show_bitboard(test_blocker);
+	int magic_index = (test_blocker * Bish_magics[2]) >> (64 - 5);
+	std::cout << "index" << magic_index << "\n";
+	show_bitboard(Bish_moves[2][magic_index]);
 
 
 	std::cout << "==\n";
