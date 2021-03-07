@@ -4,4 +4,5 @@ This chess engine is in the proccess of being able to generate all legal moves, 
 pawn moves
 knight moves
 sort of Bishop moves
+sort of rook moves
 
