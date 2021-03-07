@@ -253,7 +253,7 @@ inline void show_bitboard(U64 bitboard) {
 		}
 		std::cout << "\n";
 	}
-	std::cout << "--------";
+	std::cout << "--------" << "\n";
 
 }
 

@@ -62,9 +62,11 @@ const U64 NW_SE_WHITEdiagonal[7] = {
 
 U64 Rook_blockers[64][4096];
 U64 Rook_moves[64][4096];
+U64 Rook_magic_moves[64][4096];
 
 U64 Bish_blockers[64][1024];
 U64 Bish_moves[64][1024];
+U64 Bish_magic_moves[64][1024]; // This is to put movebaords into their new location for magic indexing, I think its redundant since we could just use Bish_moves but I want to have the backup untill I get Bish moves working
 
 const U64 Rook_magics[64] = {
 	0x2480002040001688,
@@ -463,9 +465,14 @@ void magic_rook_init() {
 		U64 blocker_mask = Rook_all(Square(sq));
 		int num_bits_rook_mask = popcount(blocker_mask);
 		for (int i = 0; i < (1 << num_bits_rook_mask); i++) {
+			
 			U64 uniq_blockb = generate_blocker(i, blocker_mask);
+			U64 movebb = Rook_movebb(Square(sq), uniq_blockb);
+			int magic_index = (uniq_blockb * Rook_magics[sq]) >> (64 - num_bits_rook_mask);
+
 			Rook_blockers[sq][i] = uniq_blockb;
-			Rook_moves[sq][i] = Rook_movebb(Square(sq), uniq_blockb);
+			Rook_moves[sq][i] = movebb;
+			Rook_magic_moves[sq][magic_index] = movebb;
 		}
 	}
 
@@ -478,9 +485,15 @@ void magic_bish_init() {
 		U64 blocker_mask = Bish_all(Square(sq));
 		int num_bits_bish_mask = popcount(blocker_mask);
 		for (int i = 0; i < (1 << num_bits_bish_mask); i++) {
+			
 			U64 blockerboard = generate_blocker(i, blocker_mask);
+			U64 movebb = Bish_movebb(Square(sq), blockerboard);
+			int magic_index = (blockerboard * Bish_magics[sq]) >> (64 - num_bits_bish_mask);
+
 			Bish_blockers[sq][i] = blockerboard;
-			Bish_moves[sq][i] = Bish_movebb(Square(sq), blockerboard);
+			Bish_moves[sq][i] = movebb;
+			Bish_magic_moves[sq][magic_index] = movebb;
+
 		}
 	}
 }

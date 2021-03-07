@@ -149,7 +149,6 @@ namespace Chess {
 				U64 us_king = bitboards[idxadj+5];
 				
 				
-				std::cout << "id" << idxadj << "\n";
 				
 				//sliding piece moves
 				//bishops
@@ -158,11 +157,9 @@ namespace Chess {
 					Square s = pop_lsb(&us_bishops);
 					U64 bmask = Bish_all(s);
 					int numbits = popcount(bmask);
-					U64 movebb = Bish_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] & (~usall);
-					while (movebb) {
-						std::cout << "movebb" << "\n";
-						show_bitboard(movebb);
-						Square to = pop_lsb(&movebb);
+					U64 bmovebb = Bish_magic_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] & (~usall);
+					while (bmovebb) {
+						Square to = pop_lsb(&bmovebb);
 						if (single_bitboards[to] & themall) {
 							*movelst++ = Move(s, to, Move_type(1));
 						}
@@ -171,6 +168,26 @@ namespace Chess {
 						}
 					}
 				}
+
+				//Rook moves
+				U64 us_rooks = bitboards[idxadj + 3];
+				while (us_rooks) {
+					Square s = pop_lsb(&us_rooks);
+					U64 rmask = Rook_all(s);
+					int numbits = popcount(rmask);
+					U64 rmovebb = Rook_magic_moves[s][(rmask * Rook_magics[s]) >> (64 - numbits)] & (~usall);
+					while (rmovebb) {
+						Square to = pop_lsb(&rmovebb);
+						if (single_bitboards[to] & themall) {
+							*movelst++ = Move(s, to, Move_type(1));
+						}
+						else {
+							*movelst++ = Move(s, to);
+						}
+					}
+				}
+
+
 
 
 				//knight moves (lol)

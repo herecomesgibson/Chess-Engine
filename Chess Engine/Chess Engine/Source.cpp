@@ -25,6 +25,9 @@ int main()
 	Square e8 = Square(53);
 	Move testpls2 = Move(e8, e6);
 
+	Square a2 = Square(8);
+	Square a4 = Square(24);
+	Move a2a4 = Move(a2, a4);
 
 	std::cout << "color:" << board.get_turn() << "\n";
 
@@ -34,11 +37,11 @@ int main()
 
 	
 
-	board.enact(testpls);
-	board.enact(testpls2);
+
+	board.enact(a2a4);
 	board.generate_legal_moves(movelst);
 	board.show();
-	std::cout << movelst[0].get_move_int() << "\n";
+	std::cout << "moveint:  " << movelst[0].get_move_int() << "\n";
 	board.enact(movelst[0]);
 	board.show();
 
@@ -47,8 +50,7 @@ int main()
 
 	int indexx = 3;
 	
-	show_bitboard(Bish_blockers[2][indexx]);
-	show_bitboard(Bish_moves[2][indexx]);
+
 
 	for (int i = 0; i < 218; i++) {
 		uint16_t temp = movelst[i].get_move_int();
@@ -58,13 +60,12 @@ int main()
 
 	}
 
-	U64 test_blocker = 2560;
-	show_bitboard(test_blocker);
-	int magic_index = (test_blocker * Bish_magics[2]) >> (64 - 5);
-	std::cout << "index" << magic_index << "\n";
-	show_bitboard(Bish_moves[2][magic_index]);
 
 
+
+	show_bitboard(Bish_moves[2][3]);
+	show_bitboard(Bish_blockers[2][3]);
+	
 	std::cout << "==\n";
 
 }
