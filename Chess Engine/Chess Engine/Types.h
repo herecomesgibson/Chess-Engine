@@ -149,6 +149,10 @@ class Move {
 
 		inline Move() : move(0) {}
 
+		inline Move(uint16_t vall) {
+			move = vall;
+		}
+
 		inline Move(Square from, Square to) : move(0) {
 			move = ((uint16_t)from << 6) | (uint16_t)to;
 		}
@@ -157,12 +161,7 @@ class Move {
 			move = flag << 12 | ((uint16_t)from << 6) | (uint16_t)to;
 		}
 
-		template<Move_type Mt = Quiet> inline Move Move_make(Square f, Square t, Piece pc) {
 
-		}
-		template<> inline Move Move_make<Capture>(Square f, Square t, Piece pc) {
-
-		}
 		inline Square from() { return Square((move >> 6) & 0x3f); }
 		inline Square to() { return Square(move & 0x3f); }
 		inline Move_type get_move_type() { return Move_type((move >> 12) & 0xf); }
@@ -226,6 +225,32 @@ inline U64 rankofbb(Square s) {
 }
 inline U64 fileofbb(Square s) {
 	return Files[(s & 0b111)];
+}
+
+//this function takes as input a square, and returns all valid "king moves" for that square i.e. all reachable squares within a distance of one
+inline U64 surrounding(Square sq) {
+	
+	U64 bit = single_bitboards[sq];
+	U64 retboard = 0;
+
+	bool north, east, south, west;
+	north = south = east = west = true;
+	//check squares on each side of target square
+	(rankof(sq) == 7) ? north = false : retboard |= (bit << 8);
+
+	(fileof(sq) == 7) ? east = false : retboard |= (bit << 1);
+
+	(rankof(sq) == 0) ? south = false : retboard |= (bit >> 8);
+
+	(fileof(sq) == 0) ? west = false : retboard |= (bit >> 1);
+
+	//corners
+	if (north && east) { retboard |= (bit << 9); }
+	if (north && west) { retboard |= (bit << 7); }
+	if (south && east) { retboard |= (bit >> 7); }
+	if (south && west) { retboard |= (bit >> 9); }
+
+	return retboard;
 }
 
 

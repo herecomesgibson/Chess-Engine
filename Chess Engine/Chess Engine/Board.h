@@ -34,6 +34,26 @@ Bitboard array index table of contents
 
 const size_t NSQUARES = 64;
 
+struct CastlingRights {
+	bool whiteL = true;
+	bool whiteR = true;
+
+	bool blackL = true;
+	bool blackR = true;
+
+};
+
+struct History {
+	
+	CastlingRights CR;
+
+	Piece capture;
+
+	//might use this to remove the move argument from the undo function.
+	uint16_t move;
+
+	constexpr History() : capture(no_piece), move(0) {}
+};
 
 namespace Chess {
 
@@ -58,6 +78,8 @@ namespace Chess {
 
 		public: 
 			
+			History hist[256];
+
 			//Board constructor, creates an empty position (no pieces, empty board)
 			Board() : bitboards{ 0 }, board_mb{  }, whose_turn(WHITE), plys(0) {
 				for (int i = 0; i < 64; i++) {
@@ -90,9 +112,15 @@ namespace Chess {
 			inline void capture(Square from, Square to) {
 				remove(to);
 				move_piece(from, to);
+				hist[plys].capture = board_mb[to];
 			}
 
 			void enact(Move move) {
+
+				if (move.get_move_int() == 0) {
+					std::cout << "enact called with move value 0" << "\n";
+					return;
+				}
 
 				Move_type mvtype = move.get_move_type();
 				//uint16_t testval = move.get_move_int();
@@ -105,8 +133,29 @@ namespace Chess {
 					capture(move.from(), move.to());
 					break;
 				}
+				hist[plys].move = move.get_move_int();
 				whose_turn = Color(whose_turn ^ BLACK);
 				plys++;
+			}
+
+			void undo(Move move) {
+				
+				--plys;
+				if (move.get_move_int() == 0) {
+					std::cout << "undo called with move value 0" << "\n";
+					return;
+				}
+				Move_type mvtype = move.get_move_type();
+				switch (mvtype) {
+				case Quiet:
+					move_piece(move.to(), move.from());
+
+				case Capture:
+					move_piece(move.to(), move.from());
+					place(hist[plys].capture, move.to());
+					break;
+				}
+
 			}
 
 			inline Color toplay() const { return whose_turn; }// fetch the color whose turn it is
@@ -135,7 +184,7 @@ namespace Chess {
 				 
 				Color Us = whose_turn;
 				Color Them = Color(Us ^ BLACK);
-
+				
 
 				int idxadj = 0; // for accessing specific pieces' bitboards
 				if (Us == BLACK) {
@@ -145,10 +194,19 @@ namespace Chess {
 				U64 themall = them_all(Us);
 				U64 allp = usall | themall;
 
-	
+				//King moves
 				U64 us_king = bitboards[idxadj+5];
-				
-				
+
+				U64 kmoves = surrounding(lsb(us_king)) & ~usall;
+				while (kmoves) {
+					Square s = pop_lsb(&kmoves);
+					if (single_bitboards[s] & themall) {
+						*movelst++ = Move(lsb(us_king), s, Move_type(1));
+					}
+					else {
+						*movelst++ = Move(lsb(us_king), s);
+					}
+				}
 				
 				//sliding piece moves
 				//bishops
@@ -158,6 +216,15 @@ namespace Chess {
 					U64 bmask = Bish_all(s);
 					int numbits = popcount(bmask);
 					U64 bmovebb = Bish_magic_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] & (~usall);
+					
+					/* DEBUGGING STATEMENT
+					if (s == 58) {
+						std::cout << "the bish move!!\n";
+						show_bitboard(bmask);
+						show_bitboard(bmovebb);
+					}
+					*/
+					
 					while (bmovebb) {
 						Square to = pop_lsb(&bmovebb);
 						if (single_bitboards[to] & themall) {
@@ -355,7 +422,8 @@ namespace Chess {
 		std::cout << "--------" << "\n";
 	}
 }//namespace
-inline Piece get_piece(Square sq) {
 
-}//return the piece on a given square
+
+
+
 

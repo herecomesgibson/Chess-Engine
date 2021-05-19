@@ -143,6 +143,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
+    <ClInclude Include="engine.h" />
     <ClInclude Include="magic.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>

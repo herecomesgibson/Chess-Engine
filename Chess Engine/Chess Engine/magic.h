@@ -47,7 +47,7 @@ const U64 NE_SW_WHITEdiagonal[8] = {
 	0x4020100804020100,
 	0x1008040201000000,
 	0x402010000000000,
-	0x100000000000000,
+	72057594037927936,
 };
 const U64 NW_SE_WHITEdiagonal[7] = {
 	0x102,
@@ -56,7 +56,7 @@ const U64 NW_SE_WHITEdiagonal[7] = {
 	0x102040810204080,
 	0x408102040800000,
 	0x1020408000000000,
-	0x4080000000000000,
+	4647714815446351872,
 };
 
 
@@ -236,23 +236,21 @@ U64 Rook_all(Square sq, bool exclude_edges = true) {
 		return moves ^ single_bitboards[sq];
 	}
 }
-//returns a blocker mask for a bishop on any given square
 
+//returns a blocker mask for a bishop on any given square(possible unblocked moves)
 U64 Bish_all(Square sq, bool edges = true) {
 
 	U64 retboard = 0;
 
-	bool foundone = false;
-	bool foundtwo = false;
 	U64 bit = single_bitboards[sq];
 
+	for (int i = 0; i < 8; i++) {
+		if (NW_SE_BLACKdiagonal[i] & bit) { retboard |= NW_SE_BLACKdiagonal[i]; }
+		if (NE_SW_WHITEdiagonal[i] & bit) { retboard |= NE_SW_WHITEdiagonal[i]; }
+	}
 	for (int i = 0; i < 7; i++) {
 		if (NE_SW_BLACKdiagonal[i] & bit) { retboard |= NE_SW_BLACKdiagonal[i]; }
 		if (NW_SE_WHITEdiagonal[i] & bit) { retboard |= NW_SE_WHITEdiagonal[i]; }
-	}
-	for (int i = 0; i < 6; i++) {
-		if (NW_SE_BLACKdiagonal[i] & bit) { retboard |= NW_SE_BLACKdiagonal[i]; }
-		if (NE_SW_WHITEdiagonal[i] & bit) { retboard |= NE_SW_WHITEdiagonal[i]; }
 	}
 	if (!edges) {
 		return retboard ^ single_bitboards[sq];
