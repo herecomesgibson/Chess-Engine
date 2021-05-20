@@ -54,4 +54,113 @@ void print_magics_rook() {
 	}
 }
 
+//
+//Functions taken from generate_legal_moves which were converted to seperate functions.
+//
+
+//bishop moves
+U64 us_bishops = bitboards[idxadj + 2];
+while (us_bishops) {
+	Square s = pop_lsb(&us_bishops);
+	U64 bmask = Bish_all(s);
+	int numbits = popcount(bmask);
+	U64 bmovebb = Bish_magic_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] & (~usall);
+					
+	while (bmovebb) {
+		Square to = pop_lsb(&bmovebb);
+		if (single_bitboards[to] & themall) {
+			*movelst++ = Move(s, to, Move_type(1));
+		}
+		else {
+			*movelst++ = Move(s, to);
+		}
+	}
+}
+
+
+//Rook moves
+U64 us_rooks = bitboards[idxadj + 3];
+while (us_rooks) {
+	Square s = pop_lsb(&us_rooks);
+	U64 rmask = Rook_all(s);
+	int numbits = popcount(rmask);
+	U64 rmovebb = Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - numbits)] & (~usall);
+	while (rmovebb) {
+		Square to = pop_lsb(&rmovebb);
+		if (single_bitboards[to] & themall) {
+			*movelst++ = Move(s, to, Move_type(1));
+		}
+		else {
+			*movelst++ = Move(s, to);
+		}
+	}
+}
+
+//Queen moves
+U64 Queen = bitboards[idxadj + 4];
+while (Queen) {
+	Square s = pop_lsb(&Queen);
+	U64 rmask = Rook_bm[s];
+	U64 bmask = Bish_bm[s];
+	int rnumbits = popcount(rmask);
+	int bnumbits = popcount(bmask);
+	U64 movebb = (Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - rnumbits)] & (~usall)) | (Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - bnumbits)] & (~usall));
+	while (movebb) {
+		Square to = pop_lsb(&movebb);
+		if (single_bitboards[to] & themall) {
+			*movelst++ = Move(s, to, Move_type(1));
+		}
+		else {
+			*movelst++ = Move(s, to);
+		}
+	}
+
+}
+
+
+//knioght moves
+U64 us_knights = bitboards[idxadj + 1];
+while (us_knights) {
+	Square s = pop_lsb(&us_knights);
+	U64 moves = knight_moves[s];
+	while (moves) {
+		Square dest = pop_lsb(&moves);
+		bool uscol = single_bitboards[dest] & usall;//bool for not self capturing
+		if (uscol == 0){
+			bool capturecol = single_bitboards[dest] & themall;//bool to determine whether its a capture or a quiet move
+			if (capturecol){
+				*movelst++ = Move(s, dest, Move_type(1));
+			}
+			else{
+				*movelst++ = Move(s, dest);
+			}
+		}
+	}
+}
+
+//Pawn moves (sans en passant)
+while (us_pawns) {
+	Square s = pop_lsb(&us_pawns);
+					
+	U64 potential_moves = shift<NORTH>(single_bitboards[s], Us);//for quiet single pushes
+	U64 potential_moved = Lshift(16, single_bitboards[s], Us);//// for quite double pushes
+	U64 left_attack = Lshift(7, single_bitboards[s], Us);//forward-left pawn attacks
+	U64 right_attack = Lshift(9, single_bitboards[s], Us);//forward-right pawn attacks
+
+	if (~(potential_moves & allp)) {//single pushes
+		*movelst++ = Move(s, Square(lsb(potential_moves)));
+	}
+	if (~(potential_moved & allp) && pawn_clean(Us, Square(s))) {//double pushes
+		*movelst++ = Move(s, Square(lsb(potential_moved)));
+	}
+	if ((left_attack & themall) && (abs(fileof(s) - fileof(Square(lsb(left_attack)))) <= 1)) {//first checks that there is actually a piece to attack then double checks the shift didnt wrap around from a to h file, 
+		*movelst++ = Move(s, Square(lsb(left_attack)), Move_type(1));
+	}
+	if ((right_attack & themall) && (abs(fileof(s) - fileof(Square(lsb(right_attack)))) <= 1)) {//first checks that there is actually a piece to attack then double checks the shift didnt wrap around from a to h file, 
+		*movelst++ = Move(s, Square(lsb(right_attack)), Move_type(1));
+	}
+}
+
+
+
 

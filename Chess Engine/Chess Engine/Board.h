@@ -87,12 +87,17 @@ namespace Chess {
 				}
 			}
 			
-			static Board Board_init(void);//static so it can be called without an object existing
+			static Board Board_init(bool empty = false);//static so it can be called without an object existing
 			
 			inline Color get_turn() {
 				return whose_turn;
 			}
 			
+			inline Piece get_piece_t(Square sq) {
+				Piece pc = board_mb[sq];
+				return pc;
+			}
+
 			void show(void);//method to display current board set-up
 			
 			inline void place(Piece piece, Square square) {
@@ -105,14 +110,14 @@ namespace Chess {
 				board_mb[square] = no_piece;
 			}//deletes piece from square
 			inline void move_piece(Square from, Square to) {
-				Piece pc = board_mb[from];
+				Piece pc = get_piece_t(from);
 				remove(from);
 				place(pc, to);
 			}//impliments quite move
 			inline void capture(Square from, Square to) {
+				hist[plys].capture = board_mb[to];
 				remove(to);
 				move_piece(from, to);
-				hist[plys].capture = board_mb[to];
 			}
 
 			void enact(Move move) {
@@ -121,13 +126,10 @@ namespace Chess {
 					std::cout << "enact called with move value 0" << "\n";
 					return;
 				}
-
 				Move_type mvtype = move.get_move_type();
-				//uint16_t testval = move.get_move_int();
 				switch (mvtype) {
 				case Quiet:
 					move_piece(move.from(), move.to());
-					//std::cout << "test:" << testval << "\n";
 					break;
 				case Capture:
 					capture(move.from(), move.to());
@@ -146,10 +148,11 @@ namespace Chess {
 					return;
 				}
 				Move_type mvtype = move.get_move_type();
+
 				switch (mvtype) {
 				case Quiet:
 					move_piece(move.to(), move.from());
-
+					break;
 				case Capture:
 					move_piece(move.to(), move.from());
 					place(hist[plys].capture, move.to());
@@ -177,54 +180,21 @@ namespace Chess {
 			U64* encode_board(Board board);
 			Board read_encoding(U64* bblst);
 
-
-
-
-			Move* generate_legal_moves(Move* movelst) {
-				 
-				Color Us = whose_turn;
-				Color Them = Color(Us ^ BLACK);
-				
-
-				int idxadj = 0; // for accessing specific pieces' bitboards
-				if (Us == BLACK) {
-					idxadj = 6;
-				}
-				U64 usall = us_all(Us);
-				U64 themall = them_all(Us);
-				U64 allp = usall | themall;
-
-				//King moves
-				U64 us_king = bitboards[idxadj+5];
-
-				U64 kmoves = surrounding(lsb(us_king)) & ~usall;
-				while (kmoves) {
-					Square s = pop_lsb(&kmoves);
-					if (single_bitboards[s] & themall) {
-						*movelst++ = Move(lsb(us_king), s, Move_type(1));
-					}
-					else {
-						*movelst++ = Move(lsb(us_king), s);
-					}
-				}
-				
-				//sliding piece moves
-				//bishops
+			Move* Bishop(Move* movelst, Color us) {
+				int idxadj = (us == WHITE) ? 0 : 6;
 				U64 us_bishops = bitboards[idxadj + 2];
+				
+
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
 				while (us_bishops) {
 					Square s = pop_lsb(&us_bishops);
-					U64 bmask = Bish_all(s);
+					U64 bmask = Bish_bm[s];
 					int numbits = popcount(bmask);
-					U64 bmovebb = Bish_magic_moves[s][ ((bmask & allp) * Bish_magics[s]) >> (64-numbits) ] & (~usall);
-					
-					/* DEBUGGING STATEMENT
-					if (s == 58) {
-						std::cout << "the bish move!!\n";
-						show_bitboard(bmask);
-						show_bitboard(bmovebb);
-					}
-					*/
-					
+					U64 bmovebb = Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - numbits)] & (~usall);
+
+
 					while (bmovebb) {
 						Square to = pop_lsb(&bmovebb);
 						if (single_bitboards[to] & themall) {
@@ -235,14 +205,24 @@ namespace Chess {
 						}
 					}
 				}
+				return movelst;
+			}
 
-				//Rook moves
+			Move* Rook(Move* movelst, Color us) {
+
+				int idxadj = (us == WHITE) ? 0 : 6;
 				U64 us_rooks = bitboards[idxadj + 3];
+
+
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
+
 				while (us_rooks) {
 					Square s = pop_lsb(&us_rooks);
-					U64 rmask = Rook_all(s);
+					U64 rmask = Rook_bm[s];
 					int numbits = popcount(rmask);
-					U64 rmovebb = Rook_magic_moves[s][(rmask * Rook_magics[s]) >> (64 - numbits)] & (~usall);
+					U64 rmovebb = Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - numbits)] & (~usall);
 					while (rmovebb) {
 						Square to = pop_lsb(&rmovebb);
 						if (single_bitboards[to] & themall) {
@@ -253,37 +233,83 @@ namespace Chess {
 						}
 					}
 				}
+				return movelst;
+			}
+
+			Move* Queen(Move* movelst, Color us) {
+				
+				int idxadj = (us == WHITE) ? 0 : 6;
+				U64 Queen = bitboards[idxadj + 4];
 
 
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
 
+				
+				while (Queen) {
+					Square s = pop_lsb(&Queen);
+					U64 rmask = Rook_bm[s];
+					U64 bmask = Bish_bm[s];
+					int rnumbits = popcount(rmask);
+					int bnumbits = popcount(bmask);
+					U64 movebb = (Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - rnumbits)] & (~usall)) | (Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - bnumbits)] & (~usall));
+					while (movebb) {
+						Square to = pop_lsb(&movebb);
+						if (single_bitboards[to] & themall) {
+							*movelst++ = Move(s, to, Move_type(1));
+						}
+						else {
+							*movelst++ = Move(s, to);
+						}
+					}
 
-				//knight moves (lol)
+				}
+				return movelst;
+			}
+
+			Move* Knight(Move* movelst, Color us) {
+				
+				int idxadj = (us == WHITE) ? 0 : 6;
+
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
+
 				U64 us_knights = bitboards[idxadj + 1];
+
 				while (us_knights) {
 					Square s = pop_lsb(&us_knights);
 					U64 moves = knight_moves[s];
 					while (moves) {
 						Square dest = pop_lsb(&moves);
 						bool uscol = single_bitboards[dest] & usall;//bool for not self capturing
-						if (uscol == 0){
+						if (uscol == 0) {
 							bool capturecol = single_bitboards[dest] & themall;//bool to determine whether its a capture or a quiet move
-							if (capturecol){
+							if (capturecol) {
 								*movelst++ = Move(s, dest, Move_type(1));
 							}
-							else{
+							else {
 								*movelst++ = Move(s, dest);
 							}
 						}
 					}
 				}
+				return movelst;
+			}
 
+			Move* Pawn(Move* movelst, Color Us) {
 				
-				//pawn moves
-				U64 us_pawns = bitboards[idxadj];
+				int idxadj = (Us == WHITE) ? 0 : 6;
 
+				U64 usall = us_all(Us);
+				U64 themall = them_all(Us);
+				U64 allp = usall | themall;
+				
+				U64 us_pawns = bitboards[idxadj];
 				while (us_pawns) {
 					Square s = pop_lsb(&us_pawns);
-					
+
 					U64 potential_moves = shift<NORTH>(single_bitboards[s], Us);//for quiet single pushes
 					U64 potential_moved = Lshift(16, single_bitboards[s], Us);//// for quite double pushes
 					U64 left_attack = Lshift(7, single_bitboards[s], Us);//forward-left pawn attacks
@@ -302,7 +328,69 @@ namespace Chess {
 						*movelst++ = Move(s, Square(lsb(right_attack)), Move_type(1));
 					}
 				}
+				return movelst;
+			}
 
+
+			Move* generate_legal_moves(Move* movelst) {
+				 
+				Color Us = whose_turn;
+				Color Them = Color(Us ^ BLACK);
+				
+
+				int idxadj = (Us == BLACK) ? idxadj = 6 : idxadj = 0;    // for accessing specific pieces' bitboards
+
+				U64 usall = us_all(Us);
+				U64 themall = them_all(Us);
+				U64 allp = usall | themall;
+
+
+
+				//King moves
+				U64 us_king = bitboards[idxadj+5];
+
+				U64 kmoves = surrounding(lsb(us_king)) & ~usall;
+				while (kmoves) {
+					Square s = pop_lsb(&kmoves);
+					if (single_bitboards[s] & themall) {
+						*movelst++ = Move(lsb(us_king), s, Move_type(1));
+					}
+					else {
+						*movelst++ = Move(lsb(us_king), s);
+					}
+				}
+				
+				//sliding piece moves
+				
+				//Bishop moves
+				movelst = Bishop(movelst, Us);
+
+				//Rook moves
+				movelst = Rook(movelst, Us);
+
+				//Queen moves
+				movelst = Queen(movelst, Us);
+
+				//Knight Moves (lol)
+				movelst = Knight(movelst, Us);
+
+				//pawn moves
+				movelst = Pawn(movelst, Us);
+
+
+
+				/*
+				//check
+				for (Move mov : movelst) {
+					if (mov.get_move_int() != 0) {
+						if ( mov.get_move_type() == Capture ) {
+							int x = 1;
+						}
+
+
+					}
+				}
+				*/
 				return movelst;
 
 
@@ -311,13 +399,24 @@ namespace Chess {
 
 	};//Board class
 
-
-	Board Board::Board_init(void) {
+	//initialize board, empty is default set to false, if true the board will be filled with pieces of type no_piece.
+	Board Board::Board_init(bool empty) {
 		magic_rook_init();
 		magic_bish_init();
 		engine_init();
 		Board new_board;
 		
+		new_board.check = false;
+		new_board.whose_turn = WHITE;
+		new_board.plys = 0;
+
+		if (empty) {
+			for (int i = 0; i < 64; i++) {
+				new_board.board_mb[i] = no_piece;
+			}
+			return new_board;
+		}
+
 		new_board.board_mb[0] = WHITE_rook;
 		new_board.board_mb[1] = WHITE_knight;
 		new_board.board_mb[2] = WHITE_bishop;
@@ -372,9 +471,6 @@ namespace Chess {
 		new_board.bitboards[10] = 0x800000000000000;
 		new_board.bitboards[11] = 0x1000000000000000;
 
-		new_board.check = false;
-		new_board.whose_turn = WHITE;
-		new_board.plys = 0;
 
 		return new_board;
 

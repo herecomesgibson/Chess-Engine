@@ -20,17 +20,47 @@ U64 perft(Chess::Board b, int depth) {
 	}
 	return nodes;
 }
+//for counting the number of captures in the move tree with a specific depth, used for debugging
+U64 perft_c(Chess::Board b, int depth) {
+	MoveIter iter(b);
+	U64 nodes = 0;
+	U64 captures = 0;
+	//if (depth == 1) { return (U64)0; }
+	if (depth == 0) { return 0ULL; }
+
+	for (Move move : iter) {
+		Move_type type = move.get_move_type();
+		b.enact(move);
+		if (type == Capture) { captures++; }
+		captures += perft_c(b, depth - 1);
+		b.undo(move);
+	}
+	return captures;
+}
 
 int main()
 {
+	
 	Chess::Board board = Chess::Board::Board_init();
 
-	int depth = 5;
+	int depth = 3;
 	int perftest = perft(board, depth);
 	std::cout << "perftest depth: " << depth << "  nodes:   " << perftest << "\n";
 
-	show_bitboard(surrounding(Square(63)));
+	Chess::Board capboard = Chess::Board::Board_init();
 
+	int caperftest = perft_c(capboard, depth);
+	std::cout << "captures at perftest depth: " << depth << "  nodes:   " << caperftest << "\n";
+
+	std::cout << Move(4456).to() << "\n";
+
+	
+	Chess::Board clean = Chess::Board::Board_init();
+	
+
+	
+	//some pre built initial moves for debugging
+	
 	Square e2 = Square(12);
 	Square e4 = Square(28);
 	Move oe4 = Move(e2, e4);
@@ -44,40 +74,46 @@ int main()
 	Move a2a4 = Move(a2, a4);
 
 	Move_type captype = Capture; 
-
 	Move exd5 = Move(e4, d5, captype);
-
-	//std::cout << "color:" << board.get_turn() << "\n";
-
-	//board.show();
-
-	Move movelst[218] = {}; //= new Move();
-	//std::list<Move> movelst;
-
-
-
 	
-	/*
-	std::cout << "moveint:  " << movelst[0].get_move_int() << "\n";
-	board.enact(movelst[1]);
-	board.show();
+	Move h3 = Move(Square(48), Square(40));
 
-	
-	//movelst = {};
-	board.generate_legal_moves(movelst);
+	Move fcap = Move(Square(5), Square(40), Move_type(1));
+	clean.enact(oe4);
+	clean.undo(oe4);
+	clean.enact(oe4);
+	clean.enact(h3);
+	clean.enact(fcap);
+	clean.show();
+
+	Piece pcc = clean.get_piece_t(Square(12));
+	std::cout << "square 12 piece type:  " << pcc << "\n";
+
+	Piece pccc = clean.get_piece_t(Square(28));
+	std::cout << "square 28 piece type:  " << pccc << "\n";
+
+
+
+
+	//Move movelst[218] = {};
+	//useful print statements for debugging
+	//std::cout << "color turn:" << board.get_turn() << "\n";
+	//std::cout << "moveint:  " << movelst[0].get_move_int() << "\n";
 	//std::cout << "movelst size: " << movelst->size() << "\n";
-	board.enact(movelst[3]);
-	board.show();
-	std::cout << "moveint:  " << movelst[0].get_move_int() << "\n";
-	std::cout << "color turn:" << board.get_turn() << "\n";
+	//show_bitboard(surrounding(Square(63)));
+
+	/* code for testing queen moves
+	Chess::Board bo = Chess::Board::Board_init( true );
+
+	U64 qmovs = bo.generate_legal_Qmoves(movelst, Square(0));
+	show_bitboard(qmovs);
 	*/
 
 
-	MoveIter list(board);
-
+	//MoveIter list(board);
 
 	/*
-	board.enact(list.begin());
+	print non 0 moves in movelst
 	for (int i = 0; i < 218; i++) {
 		uint16_t temp = movelst[i].get_move_int();
 		if (temp != 0) {
@@ -85,6 +121,7 @@ int main()
 		}
 
 	}
+	
 	show_bitboard(Bish_moves[2][3]);
 	show_bitboard(Bish_blockers[2][3]);
 	

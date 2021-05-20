@@ -134,9 +134,9 @@ enum Move_type : int {
 };
 /*
 Moves are stored as 16 bit integers.
-bits 0-6: store the destination square for the move
-bits 7-12: store the originating square
-bits 13-15: store flags for the move
+bits 0-5: store the destination square for the move
+bits 6-11: store the originating square
+bits 12-15: store flags for the move
 
 */
 class Move {
