@@ -130,6 +130,8 @@ enum Move_type : int {
 	Castle_k_BLACK,
 	Castle_q_BLACK,
 	en_pessant,
+	promotion,
+	promotion_capture
 
 };
 /*
@@ -349,6 +351,7 @@ inline bool pawn_clean(Color Us, Square s) {
 }
 
 void engine_init() {
+	//generate knight move lookup table
 	for (int sq = 0; sq < 64; sq++) {
 		for (int step : { 6, 10, 15, 17 }) {
 			U64 move1 = single_bitboards[sq] << step;

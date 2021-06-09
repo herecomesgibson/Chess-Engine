@@ -25,16 +25,18 @@ U64 perft_c(Chess::Board b, int depth) {
 	MoveIter iter(b);
 	U64 nodes = 0;
 	U64 captures = 0;
-	//if (depth == 1) { return (U64)0; }
+
 	if (depth == 0) { return 0ULL; }
 
 	for (Move move : iter) {
 		Move_type type = move.get_move_type();
+
 		b.enact(move);
 		if (type == Capture) { captures++; }
 		captures += perft_c(b, depth - 1);
 		b.undo(move);
 	}
+
 	return captures;
 }
 
@@ -43,17 +45,19 @@ int main()
 	
 	Chess::Board board = Chess::Board::Board_init();
 
-	int depth = 3;
+	int depth = 4;
+
 	int perftest = perft(board, depth);
+
 	std::cout << "perftest depth: " << depth << "  nodes:   " << perftest << "\n";
 
 	Chess::Board capboard = Chess::Board::Board_init();
 
 	int caperftest = perft_c(capboard, depth);
+
 	std::cout << "captures at perftest depth: " << depth << "  nodes:   " << caperftest << "\n";
 
-	std::cout << Move(4456).to() << "\n";
-
+	
 	
 	Chess::Board clean = Chess::Board::Board_init();
 	
@@ -80,18 +84,35 @@ int main()
 
 	Move fcap = Move(Square(5), Square(40), Move_type(1));
 	clean.enact(oe4);
-	clean.undo(oe4);
-	clean.enact(oe4);
-	clean.enact(h3);
-	clean.enact(fcap);
+	clean.enact(td5);
+	clean.enact(exd5);
+
+	Move movelstt[256] = {0};
+
 	clean.show();
 
+
+	/*
+	for (int g = 0; g < 256; g++) {
+		if (movelstt[g].get_move_int() != 0) {
+			clean.enact(movelstt[g]);
+			clean.show();
+			std::cout << "from: " << movelstt[g].from() << "  to:  " << movelstt[g].to() << "  move flag:   " << movelstt[g].get_move_type() << "\n";
+			clean.undo(movelstt[g]);
+			//std::cout << movelstt[g].get_move_int() << "\n";
+		}
+	}
+
+
+
+
+	
 	Piece pcc = clean.get_piece_t(Square(12));
 	std::cout << "square 12 piece type:  " << pcc << "\n";
 
 	Piece pccc = clean.get_piece_t(Square(28));
 	std::cout << "square 28 piece type:  " << pccc << "\n";
-
+	*/
 
 
 

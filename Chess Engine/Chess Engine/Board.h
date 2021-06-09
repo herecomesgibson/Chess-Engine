@@ -143,6 +143,7 @@ namespace Chess {
 			void undo(Move move) {
 				
 				--plys;
+				whose_turn = Color(whose_turn ^ BLACK);
 				if (move.get_move_int() == 0) {
 					std::cout << "undo called with move value 0" << "\n";
 					return;
@@ -177,125 +178,162 @@ namespace Chess {
 			}
 
 			
+
 			U64* encode_board(Board board);
 			Board read_encoding(U64* bblst);
 
-			Move* Bishop(Move* movelst, Color us) {
+
+
+			//adds bishop moves from a given square to the movelst
+			Move* Bishop(Move* movelst, Color us, Square s) {
+
 				int idxadj = (us == WHITE) ? 0 : 6;
-				U64 us_bishops = bitboards[idxadj + 2];
-				
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
+
+				U64 bmask = Bish_bm[s];
+				int numbits = popcount(bmask);
+				U64 bmovebb = Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - numbits)] & (~usall);
+
+				while (bmovebb) {
+					Square to = pop_lsb(&bmovebb);
+					if (single_bitboards[to] & themall) {
+						*movelst++ = Move(s, to, Move_type(1));
+					}
+					else {
+						*movelst++ = Move(s, to);
+					}
+				}
+
+				return movelst;
+			}
+
+			//for returning an attack bitboard from a given square, used while looking for checks
+			U64 aBishop(Color us, Square s) {
+				int idxadj = (us == WHITE) ? 0 : 6;
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
+
+				U64 bmask = Bish_bm[s];
+				int numbits = popcount(bmask);
+				U64 bmovebb = Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - numbits)] & (~usall);
+
+				return bmovebb;
+			}
+
+			Move* Rook(Move* movelst, Color us, Square s) {
+
+				int idxadj = (us == WHITE) ? 0 : 6;
 
 				U64 usall = us_all(us);
 				U64 themall = them_all(us);
 				U64 allp = usall | themall;
-				while (us_bishops) {
-					Square s = pop_lsb(&us_bishops);
-					U64 bmask = Bish_bm[s];
-					int numbits = popcount(bmask);
-					U64 bmovebb = Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - numbits)] & (~usall);
 
 
-					while (bmovebb) {
-						Square to = pop_lsb(&bmovebb);
-						if (single_bitboards[to] & themall) {
-							*movelst++ = Move(s, to, Move_type(1));
-						}
-						else {
-							*movelst++ = Move(s, to);
-						}
+				U64 rmask = Rook_bm[s];
+				int numbits = popcount(rmask);
+				U64 rmovebb = Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - numbits)] & (~usall);
+				while (rmovebb) {
+					Square to = pop_lsb(&rmovebb);
+					if (single_bitboards[to] & themall) {
+						*movelst++ = Move(s, to, Move_type(1));
+					}
+					else {
+						*movelst++ = Move(s, to);
 					}
 				}
 				return movelst;
 			}
 
-			Move* Rook(Move* movelst, Color us) {
-
+			//function for getting a bitboard of possible rook moves for a given square, for check checking
+			U64 aRook(Color us, Square s) {
 				int idxadj = (us == WHITE) ? 0 : 6;
-				U64 us_rooks = bitboards[idxadj + 3];
-
 
 				U64 usall = us_all(us);
 				U64 themall = them_all(us);
 				U64 allp = usall | themall;
 
-				while (us_rooks) {
-					Square s = pop_lsb(&us_rooks);
-					U64 rmask = Rook_bm[s];
-					int numbits = popcount(rmask);
-					U64 rmovebb = Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - numbits)] & (~usall);
-					while (rmovebb) {
-						Square to = pop_lsb(&rmovebb);
-						if (single_bitboards[to] & themall) {
-							*movelst++ = Move(s, to, Move_type(1));
-						}
-						else {
-							*movelst++ = Move(s, to);
-						}
-					}
-				}
-				return movelst;
+				U64 rmask = Rook_bm[s];
+				int numbits = popcount(rmask);
+				U64 rmovebb = Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - numbits)] & (~usall);
+
+				return rmovebb;
 			}
 
-			Move* Queen(Move* movelst, Color us) {
-				
-				int idxadj = (us == WHITE) ? 0 : 6;
-				U64 Queen = bitboards[idxadj + 4];
 
+			Move* Queen(Move* movelst, Color us, Square s) {
+
+				int idxadj = (us == WHITE) ? 0 : 6;
 
 				U64 usall = us_all(us);
 				U64 themall = them_all(us);
 				U64 allp = usall | themall;
 
-				
-				while (Queen) {
-					Square s = pop_lsb(&Queen);
-					U64 rmask = Rook_bm[s];
-					U64 bmask = Bish_bm[s];
-					int rnumbits = popcount(rmask);
-					int bnumbits = popcount(bmask);
-					U64 movebb = (Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - rnumbits)] & (~usall)) | (Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - bnumbits)] & (~usall));
-					while (movebb) {
-						Square to = pop_lsb(&movebb);
-						if (single_bitboards[to] & themall) {
-							*movelst++ = Move(s, to, Move_type(1));
-						}
-						else {
-							*movelst++ = Move(s, to);
-						}
+				U64 rmask = Rook_bm[s];
+				U64 bmask = Bish_bm[s];
+				int rnumbits = popcount(rmask);
+				int bnumbits = popcount(bmask);
+				U64 movebb = (Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - rnumbits)] & (~usall)) | (Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - bnumbits)] & (~usall));
+				while (movebb) {
+					Square to = pop_lsb(&movebb);
+					if (single_bitboards[to] & themall) {
+						*movelst++ = Move(s, to, Move_type(1));
 					}
-
+					else {
+						*movelst++ = Move(s, to);
+					}
 				}
+
+
 				return movelst;
 			}
-
-			Move* Knight(Move* movelst, Color us) {
-				
+			//returns bitboard of valid queen moves from a given square
+			U64 aQueen(Color us, Square s) {
 				int idxadj = (us == WHITE) ? 0 : 6;
 
 				U64 usall = us_all(us);
 				U64 themall = them_all(us);
 				U64 allp = usall | themall;
 
-				U64 us_knights = bitboards[idxadj + 1];
+				U64 rmask = Rook_bm[s];
+				U64 bmask = Bish_bm[s];
+				int rnumbits = popcount(rmask);
+				int bnumbits = popcount(bmask);
+				U64 movebb = (Rook_magic_moves[s][((rmask & allp) * Rook_magics[s]) >> (64 - rnumbits)] & (~usall)) | (Bish_magic_moves[s][((bmask & allp) * Bish_magics[s]) >> (64 - bnumbits)] & (~usall));
 
-				while (us_knights) {
-					Square s = pop_lsb(&us_knights);
-					U64 moves = knight_moves[s];
-					while (moves) {
-						Square dest = pop_lsb(&moves);
-						bool uscol = single_bitboards[dest] & usall;//bool for not self capturing
-						if (uscol == 0) {
-							bool capturecol = single_bitboards[dest] & themall;//bool to determine whether its a capture or a quiet move
-							if (capturecol) {
-								*movelst++ = Move(s, dest, Move_type(1));
-							}
-							else {
-								*movelst++ = Move(s, dest);
-							}
+				return movebb;
+			}
+
+			Move* Knight(Move* movelst, Color us, Square s) {
+
+				int idxadj = (us == WHITE) ? 0 : 6;
+				U64 usall = us_all(us);
+				U64 themall = them_all(us);
+				U64 allp = usall | themall;
+
+				U64 moves = knight_moves[s];
+				while (moves) {
+					Square dest = pop_lsb(&moves);
+					bool uscol = single_bitboards[dest] & usall;//bool for not self capturing
+					if (uscol == 0) {
+						bool capturecol = single_bitboards[dest] & themall;//bool to determine whether its a capture or a quiet move
+						if (capturecol) {
+							*movelst++ = Move(s, dest, Move_type(1));
+						}
+						else {
+							*movelst++ = Move(s, dest);
 						}
 					}
 				}
+
 				return movelst;
+			}
+			//returns bitboard of knight moves
+			U64 aKnight( Color us, Square s) {
+				U64 moves = knight_moves[s];
+				return moves;
 			}
 
 			Move* Pawn(Move* movelst, Color Us) {
@@ -331,23 +369,219 @@ namespace Chess {
 				return movelst;
 			}
 
+			//for pawn attacks (they need a seperate function since their attack patterns are distinct from their movement patterns, and we need exlusively the attack patterns while looking for checks)
+			U64 aPawn( Color Us, Square s) {
 
-			Move* generate_legal_moves(Move* movelst) {
-				 
-				Color Us = whose_turn;
-				Color Them = Color(Us ^ BLACK);
-				
-
-				int idxadj = (Us == BLACK) ? idxadj = 6 : idxadj = 0;    // for accessing specific pieces' bitboards
+				int idxadj = (Us == WHITE) ? 0 : 6;
 
 				U64 usall = us_all(Us);
 				U64 themall = them_all(Us);
 				U64 allp = usall | themall;
 
+				if (Us == WHITE) {
+					U64 pmov = ((single_bitboards[s] << 7) | (single_bitboards[s] << 9)) & themall;
+					return pmov;
+				}
+				else if (Us == BLACK) {
+					U64 pmov = ((single_bitboards[s] >> 7) | (single_bitboards[s] >> 9)) & themall;
+					return pmov;
+				}
+			}
+
+			//for quiet pawn moves
+			Move* qPawn(Move* movelst, Color Us, Square s) {
+
+				int idxadj = (Us == WHITE) ? 0 : 6;
+
+				U64 usall = us_all(Us);
+				U64 themall = them_all(Us);
+				U64 allp = usall | themall;
+
+				if (Us == WHITE) {
+					if (rankof(s) == 6) { // promotions, todo
+						;
+					}
+					U64 pmov = (single_bitboards[s] << 8);//signle push
+					if (rankof(s) == 1) {//potential initial double push
+
+					}
+
+				}
 
 
-				//King moves
+				return movelst;
+			}
+
+			Move* King(Move* movelst, Color Us, Square sq) {
+
+				int idxadj = (Us == WHITE) ? 0 : 6;
+
+				U64 usall = us_all(Us);
+				U64 themall = them_all(Us);
+				U64 allp = usall | themall;
+
+				U64 kmoves = surrounding(sq) & ~usall;
+				while (kmoves) {
+					Square s = pop_lsb(&kmoves);
+					if (popcount(attacksTo(Us, s)) != 0) { // if the potential move square is attacked don't add it to the list
+						continue;
+					}
+					if ((single_bitboards[s] & themall)) {
+						*movelst++ = Move(sq, s, Move_type(1));
+					}
+					else {
+						*movelst++ = Move(sq, s);
+					}
+				}
+
+				return movelst;
+			}
+
+			//returns a bitboard of possible king moves, excluding moves that leave us in check
+			U64 aKing( Color Us, Square sq) {
+
+				int idxadj = (Us == WHITE) ? 0 : 6;
+
+				U64 usall = us_all(Us);
+				U64 themall = them_all(Us);
+				U64 allp = usall | themall;
+				U64 retboard = 0;
+
+				U64 kmoves = surrounding(sq) & ~usall;
+				while (kmoves) {
+					Square s = pop_lsb(&kmoves);
+					if (popcount(attacksTo(Us, s)) != 0) { // if the potential move square is attacked don't add it to the list
+						continue;
+					}
+					retboard |= single_bitboards[s];
+				}
+				return retboard;
+			}
+
+			//returns a bitboard of all enemy pieces currently attacking a square
+			U64 attacksTo(Color Us, Square sq) {
+
+
+
+				int idxadj = (Us == 1) ? idxadj = 6 : idxadj = 0; 
+				int them_idxadj = (Us == 0) ? idxadj = 6 : idxadj = 0;
+
+				U64 pawnatt = aPawn(Us, sq) & (bitboards[them_idxadj]);
+				U64 knightatt = aKnight(Us, sq) & (bitboards[1 + them_idxadj]);
+				U64 Bishatt = aBishop(Us, sq) & (bitboards[2 + them_idxadj]);
+				U64 Rookatt = aRook(Us, sq) & (bitboards[3 + them_idxadj]);
+				U64 Queenatt = aQueen(Us, sq) & (bitboards[4 + them_idxadj]);
+
+				return (pawnatt | knightatt | Bishatt | Rookatt | Queenatt);
+			}
+
+
+
+
+
+			Move* generate_legal_moves(Move* movelst) {
+				 
+				//temp
+				int temp = 0;
+
+				Color Us = whose_turn;
+				Color Them = Color(Us ^ BLACK);
+				
+				int idxadj = 0;
+				if (Us == BLACK) {
+					idxadj = 6;
+				}
+
+
+				//int idxadj = (Us == BLACK ) ? idxadj = 6 : idxadj = 0;    // for accessing specific pieces' bitboards (idxadj = index adjustment)
+
+				int them_idxadj = (Us == 0) ? them_idxadj = 6 : them_idxadj = 0;
+
+				U64 usall = us_all(Us);
+				U64 themall = them_all(Us);
+				U64 allp = usall | themall;
+				U64 checkers = 0;//bitboard that gets populated with all pieces checking the king
+
+				//checking for checks
+
+
 				U64 us_king = bitboards[idxadj+5];
+
+				if (popcount(us_king) == 1) {
+					Square kingsq = lsb(us_king);
+					checkers = attacksTo(Us, kingsq);
+				}
+				else {
+					throw std::invalid_argument(" There is more or less than one king for one of the colors");
+				}
+
+				
+				// CHECKS
+				if (popcount(checkers) > 1) { // in the case of a double check we have to move the king
+					
+					U64 evasions = aKing(Us, lsb(us_king));
+					while (evasions) {
+						Square s = pop_lsb(&evasions);
+						if (single_bitboards[s] & themall) {
+							*movelst++ = Move(lsb(us_king), s, Move_type(1));
+						}
+						else {
+							*movelst++ = Move(lsb(us_king), s);
+						}
+					}
+					
+					
+					return movelst;//return early since moving the king is our only option
+
+				}
+				
+
+				else if (popcount(checkers) == 1) { // in the case of single checks
+					
+					//OPTIONS
+					//1. move king
+
+					U64 evasions = aKing(Us, lsb(us_king));
+					while (evasions) {
+						Square s = pop_lsb(&evasions);
+						if (single_bitboards[s] & themall) {
+							*movelst++ = Move(lsb(us_king), s, Move_type(1));
+						}
+						else {
+							*movelst++ = Move(lsb(us_king), s);
+						}
+					}
+
+					//2. capture checking piece
+
+					//get bitboard of all our pieces that are attacking the checker
+					U64 our_saviors = attacksTo(Them, lsb(checkers));
+
+					while (our_saviors) {
+						Square loc = pop_lsb(&our_saviors);
+						if (loc != lsb(us_king)) {//king moves where already added, also the king may not be able to capture the attacker if it is defended
+							*movelst++ = Move(loc, lsb(checkers), Move_type(1));
+						}
+							
+					}
+					
+					//3. block check (create pin, not for knight checks)
+
+					U64 checkers_pop = checkers;
+
+					while (checkers_pop) {
+						Square loc = pop_lsb(&checkers_pop);
+						Piece checker_type = board_mb[loc];
+
+					}
+
+
+					return movelst;
+
+					
+				}
+				
+				//King moves
 
 				U64 kmoves = surrounding(lsb(us_king)) & ~usall;
 				while (kmoves) {
@@ -360,40 +594,40 @@ namespace Chess {
 					}
 				}
 				
-				//sliding piece moves
 				
 				//Bishop moves
-				movelst = Bishop(movelst, Us);
-
+				U64 us_bishops = bitboards[idxadj + 2];
+				while (us_bishops) {
+					Square s = pop_lsb(&us_bishops);
+					movelst = Bishop(movelst, Us, s);
+				}
+				
 				//Rook moves
-				movelst = Rook(movelst, Us);
-
+				U64 us_rooks = bitboards[idxadj + 3];
+				while (us_rooks) {
+					Square s = pop_lsb(&us_rooks);
+					movelst = Rook(movelst, Us, s);
+				}
+				
+				
 				//Queen moves
-				movelst = Queen(movelst, Us);
-
+				U64 oQueen = bitboards[idxadj + 4];
+				while (oQueen) {
+					Square s = pop_lsb(&oQueen);
+					movelst = Queen(movelst, Us, s);
+				}
+				
 				//Knight Moves (lol)
-				movelst = Knight(movelst, Us);
+				U64 us_knights = bitboards[idxadj + 1];
+				while (us_knights) {
+					Square s = pop_lsb(&us_knights);
+					movelst = Knight(movelst, Us, s);
+				}
 
 				//pawn moves
 				movelst = Pawn(movelst, Us);
 
-
-
-				/*
-				//check
-				for (Move mov : movelst) {
-					if (mov.get_move_int() != 0) {
-						if ( mov.get_move_type() == Capture ) {
-							int x = 1;
-						}
-
-
-					}
-				}
-				*/
 				return movelst;
-
-
 			}
 
 

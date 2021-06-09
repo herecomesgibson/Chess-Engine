@@ -14,6 +14,6 @@ public:
 	size_t size() const { return last - list; }
 
 private:
-	Move list[218];
+	Move list[256];
 	Move* last;
 };
