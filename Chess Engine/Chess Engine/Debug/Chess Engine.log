@@ -2,10 +2,11 @@
 C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\magic.h(572,44): warning C4244: '=': conversion from 'U64' to 'int', possible loss of data
 C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\magic.h(608,20): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
 C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\magic.h(628,20): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Source.cpp(50,15): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Source.cpp(56,17): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Board.h(389): warning C4715: 'Chess::Board::aPawn': not all control paths return a value
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(315): warning C4715: 'shift<8>': not all control paths return a value
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(351): warning C4715: 'pawn_clean': not all control paths return a value
-C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(328): warning C4715: 'Lshift': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Source.cpp(66,15): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Source.cpp(72,17): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Source.cpp(78,16): warning C4244: 'initializing': conversion from 'U64' to 'int', possible loss of data
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Board.h(402): warning C4715: 'Chess::Board::aPawn': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(326): warning C4715: 'shift<8>': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(339): warning C4715: 'Lshift': not all control paths return a value
+C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Chess Engine\Types.h(362): warning C4715: 'pawn_clean': not all control paths return a value
   Chess Engine.vcxproj -> C:\Users\Gibson Olbrys\Desktop\chess\engine\Chess Engine\Debug\Chess Engine.exe

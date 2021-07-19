@@ -75,6 +75,8 @@ namespace Chess {
 
 			bool check;
 
+			bool game_over;
+
 
 		public: 
 			
@@ -99,6 +101,10 @@ namespace Chess {
 			}
 
 			void show(void);//method to display current board set-up
+
+			inline bool gameover() {
+				return game_over;
+			}
 			
 			inline void place(Piece piece, Square square) {
 				board_mb[square] = piece;
@@ -336,7 +342,7 @@ namespace Chess {
 				return moves;
 			}
 
-			Move* Pawn(Move* movelst, Color Us) {
+			Move* Pawn(Move* movelst, Color Us, U64 move_mask) {
 				
 				int idxadj = (Us == WHITE) ? 0 : 6;
 
@@ -354,11 +360,18 @@ namespace Chess {
 					U64 right_attack = Lshift(9, single_bitboards[s], Us);//forward-right pawn attacks
 
 					if (~(potential_moves & allp)) {//single pushes
-						*movelst++ = Move(s, Square(lsb(potential_moves)));
+						if (potential_moves & move_mask) { 
+							*movelst++ = Move(s, Square(lsb(potential_moves)));
+						}
+						
 					}
 					if (~(potential_moved & allp) && pawn_clean(Us, Square(s))) {//double pushes
-						*movelst++ = Move(s, Square(lsb(potential_moved)));
+						if (potential_moved & move_mask) {
+							*movelst++ = Move(s, Square(lsb(potential_moved)));
+						}
+						
 					}
+					if (~move_mask != 0) { continue; }
 					if ((left_attack & themall) && (abs(fileof(s) - fileof(Square(lsb(left_attack)))) <= 1)) {//first checks that there is actually a piece to attack then double checks the shift didnt wrap around from a to h file, 
 						*movelst++ = Move(s, Square(lsb(left_attack)), Move_type(1));
 					}
@@ -502,6 +515,8 @@ namespace Chess {
 				U64 allp = usall | themall;
 				U64 checkers = 0;//bitboard that gets populated with all pieces checking the king
 
+				U64 move_mask = 0;//bitboard to filter moves if we are in check, to only allow creation of pins
+
 				//checking for checks
 
 
@@ -517,9 +532,17 @@ namespace Chess {
 
 				
 				// CHECKS
+				if (checkers == 0) {
+					move_mask = ~move_mask;
+				}
+
 				if (popcount(checkers) > 1) { // in the case of a double check we have to move the king
 					
 					U64 evasions = aKing(Us, lsb(us_king));
+					if (!evasions) {
+						game_over = true;
+					}
+
 					while (evasions) {
 						Square s = pop_lsb(&evasions);
 						if (single_bitboards[s] & themall) {
@@ -567,25 +590,38 @@ namespace Chess {
 					
 					//3. block check (create pin, not for knight checks)
 
-					U64 checkers_pop = checkers;
+					Square c_loc = lsb(checkers);
+					Piece checker_p = board_mb[c_loc];
 
-					while (checkers_pop) {
-						Square loc = pop_lsb(&checkers_pop);
-						Piece checker_type = board_mb[loc];
+					switch (checker_p) {
+						case WHITE_bishop:
+						case BLACK_bishop:
+							move_mask = rays[c_loc][lsb(us_king)];
 
+							break;
+						case WHITE_rook:
+						case BLACK_rook:
+							move_mask = rays[c_loc][lsb(us_king)];
+
+							break;
+						case WHITE_queen:
+						case BLACK_queen:
+							move_mask = rays[c_loc][lsb(us_king)];
+
+							break;
+						default:
+
+							break;
 					}
-
-
-					return movelst;
-
-					
 				}
+
 				
 				//King moves
 
 				U64 kmoves = surrounding(lsb(us_king)) & ~usall;
 				while (kmoves) {
 					Square s = pop_lsb(&kmoves);
+					
 					if (single_bitboards[s] & themall) {
 						*movelst++ = Move(lsb(us_king), s, Move_type(1));
 					}
@@ -599,6 +635,7 @@ namespace Chess {
 				U64 us_bishops = bitboards[idxadj + 2];
 				while (us_bishops) {
 					Square s = pop_lsb(&us_bishops);
+					if (!(single_bitboards[s] & move_mask)) { continue; } 
 					movelst = Bishop(movelst, Us, s);
 				}
 				
@@ -606,6 +643,7 @@ namespace Chess {
 				U64 us_rooks = bitboards[idxadj + 3];
 				while (us_rooks) {
 					Square s = pop_lsb(&us_rooks);
+					if (!(single_bitboards[s] & move_mask)) { continue; }
 					movelst = Rook(movelst, Us, s);
 				}
 				
@@ -614,6 +652,7 @@ namespace Chess {
 				U64 oQueen = bitboards[idxadj + 4];
 				while (oQueen) {
 					Square s = pop_lsb(&oQueen);
+					if (!(single_bitboards[s] & move_mask)) { continue; }
 					movelst = Queen(movelst, Us, s);
 				}
 				
@@ -621,11 +660,24 @@ namespace Chess {
 				U64 us_knights = bitboards[idxadj + 1];
 				while (us_knights) {
 					Square s = pop_lsb(&us_knights);
+					if (!(single_bitboards[s] & move_mask)) { continue; }
 					movelst = Knight(movelst, Us, s);
 				}
 
 				//pawn moves
-				movelst = Pawn(movelst, Us);
+				movelst = Pawn(movelst, Us, move_mask);
+
+				bool emptylst = true;
+				for (int k=0; k < 218; k++) {
+					if (movelst[k].get_move_int() != 0) {
+						emptylst = false;
+						break;
+					}
+				}
+				if (emptylst) {
+					game_over = true;
+				}
+
 
 				return movelst;
 			}
@@ -635,6 +687,7 @@ namespace Chess {
 
 	//initialize board, empty is default set to false, if true the board will be filled with pieces of type no_piece.
 	Board Board::Board_init(bool empty) {
+		init_rays();
 		magic_rook_init();
 		magic_bish_init();
 		engine_init();
@@ -643,6 +696,7 @@ namespace Chess {
 		new_board.check = false;
 		new_board.whose_turn = WHITE;
 		new_board.plys = 0;
+		new_board.game_over = false;
 
 		if (empty) {
 			for (int i = 0; i < 64; i++) {

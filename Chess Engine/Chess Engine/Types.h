@@ -134,6 +134,9 @@ enum Move_type : int {
 	promotion_capture
 
 };
+
+
+
 /*
 Moves are stored as 16 bit integers.
 bits 0-5: store the destination square for the move
@@ -219,6 +222,14 @@ inline int rankof(Square s) {
 }
 constexpr int fileof(Square s) {
 	return (s & 0b111);
+}
+
+inline int diagof(Square s) {
+	return (rankof(s) - fileof(s));
+}
+
+inline int anti_diagof(Square s) {
+	return (rankof(s) + fileof(s));
 }
 
 
@@ -349,6 +360,58 @@ inline bool pawn_clean(Color Us, Square s) {
 		break;
 	}
 }
+
+
+U64 rays[64][64];
+
+void init_rays() {
+
+	for (int sq1 = 0; sq1 < 64; sq1++) {
+		for (int sq2 = 0; sq2 < 64; sq2++) {
+			
+			Square smaller = (sq1 > sq2) ? Square(sq2) : Square(sq1);
+			Square bigger = (sq2 > sq1) ? Square(sq2) : Square(sq1);
+
+			U64 endboard = single_bitboards[bigger];
+			U64 retboard = single_bitboards[smaller];
+
+			
+			if (rankof(Square(sq1)) == rankof(Square(sq2)) && sq1 != sq2) {
+				
+				retboard <<= 1;
+				while (retboard != endboard) {
+					rays[sq1][sq2] |= retboard;
+					retboard <<= 1;
+				}
+
+			} else if ( fileof(Square(sq1)) == fileof(Square(sq2)) && sq1 != sq2) {
+				retboard <<= 8;
+				while (retboard != endboard) {
+					rays[sq1][sq2] |= retboard;
+					retboard <<= 8;
+				}
+			} else if (diagof(Square(sq1)) == diagof(Square(sq2)) && sq1 != sq2) {
+				retboard <<= 9;
+				while (retboard != endboard) {
+					rays[sq1][sq2] |= retboard;
+					retboard <<= 9;
+				}
+			}
+			else if (anti_diagof(Square(sq1)) == anti_diagof(Square(sq2)) && sq1 != sq2) {
+				retboard <<= 7;
+				while (retboard != endboard) {
+					rays[sq1][sq2] |= retboard;
+					retboard <<= 7;
+				}
+			}
+
+		}
+	}
+
+
+
+}
+
 
 void engine_init() {
 	//generate knight move lookup table

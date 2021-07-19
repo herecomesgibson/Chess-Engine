@@ -40,6 +40,22 @@ U64 perft_c(Chess::Board b, int depth) {
 	return captures;
 }
 
+U64 perft_m(Chess::Board b, int depth) {
+	MoveIter iter(b);
+	U64 nodes = 0;
+	U64 mates = 0;
+	if (depth == 0) { return 0ULL; }
+
+	for (Move move : iter) {
+		b.enact(move);
+
+		if (b.gameover()) { mates++; }
+		mates += perft_m(b, depth - 1);
+		b.undo(move);
+	}
+	return mates;
+}
+
 int main()
 {
 	
@@ -57,7 +73,11 @@ int main()
 
 	std::cout << "captures at perftest depth: " << depth << "  nodes:   " << caperftest << "\n";
 
-	
+	Chess::Board mateboard = Chess::Board::Board_init();
+
+	int matestest = perft_m(mateboard, depth);
+
+	std::cout << "mates at perftest depth: " << depth << "  nodes:   " << matestest << "\n";
 	
 	Chess::Board clean = Chess::Board::Board_init();
 	
@@ -90,6 +110,10 @@ int main()
 	Move movelstt[256] = {0};
 
 	clean.show();
+
+
+	show_bitboard(rays[49][14]);
+
 
 
 	/*

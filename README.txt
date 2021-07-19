@@ -1,5 +1,5 @@
 [WIP]
-In addition to being unfinished, this engine currently is in need of some refactoring, so to whoever is reading this... I'm sorry and don't judge me, I know it's not pretty
+This engine is currently still under production and in need of a little refactoring
 
 This engine can currently generate all pseudo legal moves
 
